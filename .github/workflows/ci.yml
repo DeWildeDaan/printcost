@@ -70,4 +70,6 @@ jobs:
         run: helm package helm/printcost --destination /tmp/chart
 
       - name: Push chart
-        run: helm push /tmp/chart/*.tgz oci://${{ env.IMAGE }}-chart
+        run: |
+          image="${IMAGE,,}"
+          helm push /tmp/chart/*.tgz "oci://${image}-chart"
