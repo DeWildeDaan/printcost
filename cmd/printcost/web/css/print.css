@@ -1,0 +1,12 @@
+@media print {
+  #sidebar, .no-print { display: none !important; }
+  #main-content { padding: 0; max-width: none; }
+  body, html { background: #fff; color: #000; }
+  .card, .section { border-color: #ccc; background: #fff; }
+  a { color: #000; text-decoration: none; }
+  table { font-size: 12px; }
+  thead th { color: #333; }
+  tbody td { border-bottom: 1px solid #ddd; }
+  .printable-quote { page-break-inside: avoid; }
+  @page { size: A4; margin: 16mm; }
+}

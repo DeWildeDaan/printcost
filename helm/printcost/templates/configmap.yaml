@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-printcost-env
+data:
+  DB_PATH: {{ .Values.env.DB_PATH | quote }}

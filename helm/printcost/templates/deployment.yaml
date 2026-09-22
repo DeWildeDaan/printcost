@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-printcost
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    # SQLite is single-writer: never run a rolling update with two pods
+    # attached to the same volume at once.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-printcost
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-printcost
+    spec:
+      containers:
+        - name: printcost
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-printcost-env
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-printcost-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
