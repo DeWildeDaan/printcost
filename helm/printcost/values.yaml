@@ -22,6 +22,16 @@ persistence:
 env:
   DB_PATH: /data/printcost.db
 
+# The whole site is protected by OIDC/SSO login (no local accounts).
+# clientSecret and sessionSecret go in a Secret, not the ConfigMap - set
+# them via --set or a values override file that isn't committed.
+oidc:
+  issuerUrl: ""
+  clientId: ""
+  clientSecret: ""
+  redirectUrl: ""
+  sessionSecret: ""
+
 resources:
   requests:
     cpu: 100m

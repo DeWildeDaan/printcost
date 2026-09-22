@@ -13,19 +13,35 @@ database — no external dependencies to run.
 
 ## Running locally
 
+Copy `.env.example` to `.env` and fill in your identity provider's details,
+then run:
+
 ```
-go run ./cmd/printcost
+./dev.sh
 ```
+
+This loads `.env` and runs `go run ./cmd/printcost`. (`.env` is
+git-ignored - only the placeholder `.env.example` is committed.)
 
 The app listens on `:8080` and creates `./printcost.db` on first run.
 
+The whole site is protected by OIDC/SSO login — there are no local accounts,
+and anyone who signs in through your identity provider gets full access.
+Register `<public URL>/auth/callback` as the redirect URI with your provider
+(Auth0, Keycloak, Entra ID, Google, etc.).
+
 Configuration is via environment variables:
 
-| Variable          | Default            | Description                          |
-|-------------------|---------------------|---------------------------------------|
-| `PORT`             | `8080`              | HTTP listen port                     |
-| `DB_PATH`          | `./printcost.db`    | Path to the SQLite database file     |
-| `BASE_URL_PREFIX`  | *(empty)*           | Prefix to serve the app under, e.g. `/printcost` |
+| Variable              | Default            | Description                          |
+|-----------------------|---------------------|---------------------------------------|
+| `PORT`                 | `8080`              | HTTP listen port                     |
+| `DB_PATH`              | `./printcost.db`    | Path to the SQLite database file     |
+| `BASE_URL_PREFIX`      | *(empty)*           | Prefix to serve the app under, e.g. `/printcost` |
+| `OIDC_ISSUER_URL`      | *(required)*        | Your identity provider's issuer URL (OIDC discovery) |
+| `OIDC_CLIENT_ID`       | *(required)*        | OAuth client ID registered with the provider |
+| `OIDC_CLIENT_SECRET`   | *(required)*        | OAuth client secret |
+| `OIDC_REDIRECT_URL`    | *(required)*        | Public callback URL, e.g. `https://printcost.example.com/auth/callback` |
+| `SESSION_SECRET`       | *(required)*        | Random secret used to sign session cookies (e.g. `openssl rand -hex 32`) |
 
 ## Tests
 

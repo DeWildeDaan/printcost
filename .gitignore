@@ -10,6 +10,9 @@
 *.test
 *.out
 
+# Local secrets - never commit; .env.example is the committed placeholder
+.env
+
 # Editor/OS
 .DS_Store
 .idea/

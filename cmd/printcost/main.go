@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"io/fs"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"printcost/internal/api"
+	"printcost/internal/auth"
 	"printcost/internal/db"
 )
 
@@ -25,6 +27,14 @@ func getenv(key, fallback string) string {
 	return fallback
 }
 
+func mustGetenv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		log.Fatalf("%s must be set (SSO protects the whole site, so it's required)", key)
+	}
+	return v
+}
+
 func main() {
 	dbPath := getenv("DB_PATH", "./printcost.db")
 	port := getenv("PORT", "8080")
@@ -35,6 +45,18 @@ func main() {
 		log.Fatalf("failed to open database: %v", err)
 	}
 	defer sqlDB.Close()
+
+	auther, err := auth.New(context.Background(), auth.Config{
+		IssuerURL:    mustGetenv("OIDC_ISSUER_URL"),
+		ClientID:     mustGetenv("OIDC_CLIENT_ID"),
+		ClientSecret: mustGetenv("OIDC_CLIENT_SECRET"),
+		RedirectURL:  mustGetenv("OIDC_REDIRECT_URL"),
+		SessionKey:   []byte(mustGetenv("SESSION_SECRET")),
+		BasePrefix:   basePrefix,
+	})
+	if err != nil {
+		log.Fatalf("failed to set up SSO: %v", err)
+	}
 
 	if err := db.Seed(sqlDB); err != nil {
 		log.Fatalf("failed to seed database: %v", err)
@@ -49,6 +71,9 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	r.Use(auther.Require)
+	auther.Mount(r)
 
 	r.Mount(basePrefix+"/api/v1", api.New(sqlDB).Routes())
 

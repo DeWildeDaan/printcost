@@ -4,3 +4,6 @@ metadata:
   name: {{ .Release.Name }}-printcost-env
 data:
   DB_PATH: {{ .Values.env.DB_PATH | quote }}
+  OIDC_ISSUER_URL: {{ .Values.oidc.issuerUrl | quote }}
+  OIDC_CLIENT_ID: {{ .Values.oidc.clientId | quote }}
+  OIDC_REDIRECT_URL: {{ .Values.oidc.redirectUrl | quote }}

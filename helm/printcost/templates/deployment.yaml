@@ -25,6 +25,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-printcost-env
+            - secretRef:
+                name: {{ .Release.Name }}-printcost-secrets
           volumeMounts:
             - name: data
               mountPath: /data
