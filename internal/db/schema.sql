@@ -74,9 +74,22 @@ CREATE TABLE IF NOT EXISTS filaments (
     drying_temp_c        INTEGER,
     drying_time_hours    REAL,
     requires_dry_cabinet INTEGER NOT NULL DEFAULT 0,
+    glue_stick_recommended INTEGER NOT NULL DEFAULT 0,
     notes                TEXT NOT NULL DEFAULT '',
+    colors_json                       TEXT NOT NULL DEFAULT '[]',
+    recommended_build_plate_ids_json  TEXT NOT NULL DEFAULT '[]',
     created_at           TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS material_settings (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    material    TEXT NOT NULL UNIQUE,
+    supports    TEXT NOT NULL DEFAULT '',
+    fuzzy_skin  TEXT NOT NULL DEFAULT '',
+    ironing     TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS consumables (
@@ -84,6 +97,7 @@ CREATE TABLE IF NOT EXISTS consumables (
     name             TEXT NOT NULL,
     unit_label       TEXT NOT NULL,
     unit_cost        REAL NOT NULL,
+    default_on_quote INTEGER NOT NULL DEFAULT 0,
     notes            TEXT NOT NULL DEFAULT '',
     created_at       TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at       TEXT NOT NULL DEFAULT (datetime('now'))

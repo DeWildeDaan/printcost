@@ -57,7 +57,9 @@ export async function renderQuoteBuilder(container, quoteId) {
     additional_cost: "", additional_cost_note: "",
     markup_pct: settings.markup,
     processing_steps: [],
-    consumables: [],
+    consumables: lookups.consumables
+      .filter((c) => c.default_on_quote)
+      .map((c) => ({ consumable_id: c.id, qty: 1, unit_cost: c.unit_cost })),
   };
 
   // Mutable working copies of the dynamic row lists.
@@ -197,7 +199,10 @@ export async function renderQuoteBuilder(container, quoteId) {
       <div class="section">
         <h3 style="margin-top:0;">Main print</h3>
         <div class="form-grid">
-          <div class="field"><label>Filament *</label>${selectHTML("filament_id", lookups.filaments, q.filament_id, "— select —")}</div>
+          <div class="field">
+            <label>Filament *</label>${selectHTML("filament_id", lookups.filaments, q.filament_id, "— select —")}
+            <div id="filament-colors" class="hint" style="margin-top:4px;"></div>
+          </div>
           <div class="field"><label>Print weight (g) *</label><input type="number" step="0.1" name="print_weight_g" required value="${q.print_weight_g}"></div>
           <div class="field"><label>Print time (HH:MM) *</label><input type="text" name="print_time_hhmm" required pattern="\\d{1,3}:\\d{2}" value="${minutesToHHMM(q.print_time_min)}"></div>
         </div>
@@ -236,7 +241,7 @@ export async function renderQuoteBuilder(container, quoteId) {
           <div class="field"><label>Drying hours</label><input type="number" step="0.1" name="drying_hours" value="${q.drying_hours}"></div>
           <div class="field"><label>Dry cabinet</label>${selectHTML("dry_cabinet_id", lookups.otherEquipment, q.dry_cabinet_id, "— none —")}</div>
         </div>
-        <p class="hint">Drying uses the AMS unit's hourly cost if an AMS is selected. The dry cabinet's cost is added automatically if a filament in this quote is flagged as requiring one.</p>
+        <p class="hint">Drying is done in the dry cabinet OR the AMS, never both: the cabinet is used automatically if selected and a filament in this quote requires one, otherwise drying falls back to the AMS unit's hourly cost.</p>
       `, q.drying_enabled)}
 
       <div class="section">
@@ -305,6 +310,24 @@ export async function renderQuoteBuilder(container, quoteId) {
     drawConsumableRows();
   });
 
+  function drawFilamentColors() {
+    const f = byId(lookups.filaments, form.elements.filament_id.value);
+    const colorsEl = container.querySelector("#filament-colors");
+    if (!f || !f.colors || !f.colors.length) {
+      colorsEl.innerHTML = "";
+      return;
+    }
+    colorsEl.innerHTML =
+      "Available colors: " +
+      f.colors
+        .map((c) => {
+          const swatch = `<span class="swatch" style="background:${escapeHTML(c.hex)}; border:1px solid var(--border);"></span>`;
+          return c.profile_url ? `<a href="${escapeHTML(c.profile_url)}" target="_blank" rel="noopener">${swatch}${escapeHTML(c.hex)}</a>` : `${swatch}${escapeHTML(c.hex)}`;
+        })
+        .join(" &nbsp; ");
+  }
+  drawFilamentColors();
+
   // Pre-fill drying hours from the selected filament's default when it changes,
   // but only if the user hasn't already set a value (avoid clobbering edits).
   form.elements.filament_id.addEventListener("change", (e) => {
@@ -313,6 +336,7 @@ export async function renderQuoteBuilder(container, quoteId) {
     if (f && f.drying_time_hours != null && !dryingHoursInput.value) {
       dryingHoursInput.value = f.drying_time_hours;
     }
+    drawFilamentColors();
     updatePreview();
   });
 
@@ -408,20 +432,65 @@ export async function renderQuoteBuilder(container, quoteId) {
       markupPct: s.markup_pct,
     });
 
+    const categories = [
+      { key: "costFilament", label: "Filament", color: "var(--cat-1)" },
+      { key: "costElectricity", label: "Electricity", color: "var(--cat-2)" },
+      { key: "costDepreciation", label: "Machine depreciation", color: "var(--cat-3)" },
+      { key: "costLabor", label: "Labour", color: "var(--cat-4)" },
+      { key: "costConsumables", label: "Consumables", color: "var(--cat-5)" },
+      { key: "costFailure", label: "Failed print allowance", color: "var(--cat-6)" },
+      { key: "costMarkup", label: "Markup", color: "var(--cat-7)" },
+    ];
+    const total = result.suggestedPrice || 1;
+
+    let gradientPos = 0;
+    const gradientStops = categories.map((c) => {
+      const pct = (result[c.key] / total) * 100;
+      const from = gradientPos;
+      gradientPos += pct;
+      return `${c.color} ${from}% ${gradientPos}%`;
+    }).join(", ");
+
     container.querySelector("#cost-preview").innerHTML = `
-      <table>
-        <tbody>
-          <tr><td>Filament</td><td class="num">${fmtMoney(result.costFilament)}</td></tr>
-          <tr><td>Electricity</td><td class="num">${fmtMoney(result.costElectricity)}</td></tr>
-          <tr><td>Machine depreciation</td><td class="num">${fmtMoney(result.costDepreciation)}</td></tr>
-          <tr><td>Labour</td><td class="num">${fmtMoney(result.costLabor)}</td></tr>
-          <tr><td>Consumables</td><td class="num">${fmtMoney(result.costConsumables)}</td></tr>
-          <tr><td>Failed print allowance</td><td class="num">${fmtMoney(result.costFailure)}</td></tr>
-          <tr><td>Markup</td><td class="num">${fmtMoney(result.costMarkup)}</td></tr>
-          <tr style="font-weight:700;"><td>Suggested price</td><td class="num">${fmtMoney(result.suggestedPrice)}</td></tr>
-        </tbody>
-      </table>
+      <div class="cost-preview-layout">
+        <table class="cat-table">
+          <tbody>
+            ${categories.map((c) => {
+              const lines = (result.breakdown[c.key] || []);
+              return `
+                <tr class="cat-row" data-cat="${c.key}">
+                  <td><span class="cat-swatch" style="background:${c.color}"></span>${c.label}</td>
+                  <td class="num">${fmtMoney(result[c.key])}</td>
+                </tr>
+                <tr class="cat-detail collapsed" data-cat-detail="${c.key}">
+                  <td colspan="2">
+                    ${lines.length
+                      ? `<ul class="cat-detail-list">${lines.map((l) => `<li><span>${escapeHTML(l.label)}</span><span class="num">${fmtMoney(l.value)}</span></li>`).join("")}</ul>`
+                      : `<p class="hint">Nothing contributes to this category yet.</p>`}
+                  </td>
+                </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+        <div class="pie-wrap">
+          <div class="pie-chart" style="background: conic-gradient(${gradientStops})"></div>
+          <ul class="pie-legend">
+            ${categories.map((c) => `<li><span class="cat-swatch" style="background:${c.color}"></span>${c.label}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+      <div class="suggested-price-box">
+        <span class="suggested-price-label">Suggested price</span>
+        <span class="suggested-price-value">${fmtMoney(result.suggestedPrice)}</span>
+      </div>
     `;
+
+    container.querySelectorAll(".cat-row").forEach((row) => {
+      row.addEventListener("click", () => {
+        const detail = container.querySelector(`[data-cat-detail="${row.dataset.cat}"]`);
+        detail.classList.toggle("collapsed");
+      });
+    });
   }
 
   drawStepRows();

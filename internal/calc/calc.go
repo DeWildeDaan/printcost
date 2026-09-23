@@ -88,31 +88,38 @@ func Calculate(in Input) Result {
 	}
 
 	// --- Depreciation & electricity from the printer/nozzle/plate ---
+	// Prototypes are printed on the same equipment, so their time counts here too.
 	costDepreciation := 0.0
 	costElectricity := 0.0
+	machineHours := printTimeHours + prototypeTimeHours
 
 	if in.Machine != nil && in.Machine.LifespanHours > 0 {
 		hourlyDep := (in.Machine.PurchasePrice + in.Machine.ServiceCost) / in.Machine.LifespanHours
-		costDepreciation += hourlyDep * printTimeHours
-		costElectricity += in.Machine.PowerKw * printTimeHours * in.Settings.EnergyCost
+		costDepreciation += hourlyDep * machineHours
+		costElectricity += in.Machine.PowerKw * machineHours * in.Settings.EnergyCost
 	}
 	if in.Nozzle != nil && in.Nozzle.LifespanHours > 0 {
-		costDepreciation += (in.Nozzle.PurchasePrice / in.Nozzle.LifespanHours) * printTimeHours
+		costDepreciation += (in.Nozzle.PurchasePrice / in.Nozzle.LifespanHours) * machineHours
 	}
 	if in.BuildPlate != nil && in.BuildPlate.LifespanHours > 0 {
-		costDepreciation += (in.BuildPlate.PurchasePrice / in.BuildPlate.LifespanHours) * printTimeHours
+		costDepreciation += (in.BuildPlate.PurchasePrice / in.BuildPlate.LifespanHours) * machineHours
 	}
 
-	// --- AMS: used for printing (print+prototype hours, toggleable) and
-	// independently during drying (always added if drying is enabled and
-	// an AMS is selected). ---
+	// Drying happens in the dry cabinet OR the AMS, never both: the cabinet
+	// is used when one is selected and a filament in the quote requires it,
+	// otherwise drying falls back to the AMS.
+	usingDryCabinet := in.DryingEnabled && in.DryCabinet != nil && in.DryCabinet.LifespanHours > 0 &&
+		filamentRequiresDryCabinet(in.MainFilament, in.SupportFilament, in.PrototypeFilament)
+
+	// --- AMS: used for printing (print+prototype hours, toggleable) and,
+	// when drying isn't handled by a dry cabinet, for drying too. ---
 	if in.AMS != nil && in.AMS.LifespanHours > 0 {
 		amsPrintHours := 0.0
 		if in.AMSUsedForPrinting {
 			amsPrintHours = printTimeHours + prototypeTimeHours
 		}
 		amsDryHours := 0.0
-		if in.DryingEnabled {
+		if in.DryingEnabled && !usingDryCabinet {
 			amsDryHours = in.DryingHours
 		}
 		amsTotalHours := amsPrintHours + amsDryHours
@@ -122,15 +129,11 @@ func Calculate(in Input) Result {
 		costElectricity += in.AMS.PowerKw * amsTotalHours * in.Settings.EnergyCost
 	}
 
-	// --- Dry cabinet: only when drying is enabled, a cabinet is selected,
-	// and at least one filament used in this quote requires it. ---
-	if in.DryingEnabled && in.DryCabinet != nil && in.DryCabinet.LifespanHours > 0 {
-		needsCabinet := filamentRequiresDryCabinet(in.MainFilament, in.SupportFilament, in.PrototypeFilament)
-		if needsCabinet {
-			cabinetHourly := (in.DryCabinet.PurchasePrice + in.DryCabinet.ServiceCost) / in.DryCabinet.LifespanHours
-			costDepreciation += cabinetHourly * in.DryingHours
-			costElectricity += in.DryCabinet.PowerKw * in.DryingHours * in.Settings.EnergyCost
-		}
+	// --- Dry cabinet ---
+	if usingDryCabinet {
+		cabinetHourly := (in.DryCabinet.PurchasePrice + in.DryCabinet.ServiceCost) / in.DryCabinet.LifespanHours
+		costDepreciation += cabinetHourly * in.DryingHours
+		costElectricity += in.DryCabinet.PowerKw * in.DryingHours * in.Settings.EnergyCost
 	}
 
 	// --- Labor & consumables ---

@@ -204,6 +204,38 @@ func TestDryCabinetOnlyAppliesWhenFilamentRequiresIt(t *testing.T) {
 	}
 }
 
+func TestDryingUsesCabinetOrAMSNeverBoth(t *testing.T) {
+	settings := baseSettings()
+	ams := &models.AMSUnit{PurchasePrice: 300, ServiceCost: 0, LifespanHours: 3000, PowerKw: 0.05}
+	cabinet := &models.OtherEquipment{PurchasePrice: 200, ServiceCost: 0, LifespanHours: 2000, PowerKw: 0.1}
+	requiring := filament(20, 1, true)
+
+	in := Input{
+		Settings:           settings,
+		MainFilament:       requiring,
+		PrintWeightG:       10,
+		PrintTimeMin:       60,
+		AMS:                ams,
+		AMSUsedForPrinting: false,
+		DryCabinet:         cabinet,
+		DryingEnabled:      true,
+		DryingHours:        4,
+		MarkupPct:          0,
+	}
+	r := Calculate(in)
+
+	cabinetHourly := 200.0 / 2000.0
+	wantDep := cabinetHourly * 4 // only the cabinet, not the AMS too
+	wantElec := 0.1 * 4 * 0.28
+
+	if !almostEqual(r.CostDepreciation, wantDep) {
+		t.Errorf("CostDepreciation = %v, want %v (cabinet only, AMS must not also charge for drying)", r.CostDepreciation, wantDep)
+	}
+	if !almostEqual(r.CostElectricity, wantElec) {
+		t.Errorf("CostElectricity = %v, want %v (cabinet only, AMS must not also charge for drying)", r.CostElectricity, wantElec)
+	}
+}
+
 func TestFailureAndMarkupOrdering(t *testing.T) {
 	// markup must be applied to (subtotal + failure), not just subtotal.
 	settings := models.Settings{EnergyCost: 0, LaborRate: 0, FailureRate: 10, Markup: 0}
@@ -230,6 +262,44 @@ func TestFailureAndMarkupOrdering(t *testing.T) {
 	}
 	if !almostEqual(r.CostTotal, wantTotal) {
 		t.Errorf("CostTotal = %v, want %v", r.CostTotal, wantTotal)
+	}
+}
+
+func TestPrototypeTimeCountsTowardMachineDepreciationAndElectricity(t *testing.T) {
+	settings := baseSettings()
+	machine := &models.Machine{PurchasePrice: 1000, ServiceCost: 0, LifespanHours: 1000, PowerKw: 0.2}
+	nozzle := &models.Nozzle{PurchasePrice: 20, LifespanHours: 200}
+	plate := &models.BuildPlate{PurchasePrice: 30, LifespanHours: 300}
+	main := filament(20, 1, false)
+	proto := filament(20, 1, false)
+
+	in := Input{
+		Settings:     settings,
+		Machine:      machine,
+		Nozzle:       nozzle,
+		BuildPlate:   plate,
+		MainFilament: main,
+		PrintWeightG: 10,
+		PrintTimeMin: 60, // 1h
+
+		PrototypesEnabled: true,
+		PrototypeFilament: proto,
+		PrototypeWeightG:  10,
+		PrototypeTimeMin:  30, // 0.5h
+
+		MarkupPct: 0,
+	}
+	r := Calculate(in)
+
+	machineHours := 1.5 // print + prototype time
+	wantDep := (1000.0/1000.0)*machineHours + (20.0/200.0)*machineHours + (30.0/300.0)*machineHours
+	wantElec := 0.2 * machineHours * 0.28
+
+	if !almostEqual(r.CostDepreciation, wantDep) {
+		t.Errorf("CostDepreciation = %v, want %v (should include prototype print time)", r.CostDepreciation, wantDep)
+	}
+	if !almostEqual(r.CostElectricity, wantElec) {
+		t.Errorf("CostElectricity = %v, want %v (should include prototype print time)", r.CostElectricity, wantElec)
 	}
 }
 

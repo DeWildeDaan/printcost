@@ -4,6 +4,7 @@ import { renderDashboard } from "./pages/dashboard.js";
 import { renderEquipmentPage } from "./pages/equipment.js";
 import { renderFilaments } from "./pages/filaments.js";
 import { renderConsumables } from "./pages/consumables.js";
+import { renderMaterialSettings } from "./pages/materialSettings.js";
 import { renderQuoteList } from "./pages/quoteList.js";
 import { renderQuoteBuilder } from "./pages/quoteBuilder.js";
 import { renderQuoteDetail } from "./pages/quoteDetail.js";
@@ -18,6 +19,7 @@ const routes = [
   { pattern: /^quotes\/(\d+)$/, handler: (m) => renderQuoteDetail(mainContent, m[1]) },
   { pattern: /^quotes$/, handler: () => renderQuoteList(mainContent) },
   { pattern: /^filaments$/, handler: () => renderFilaments(mainContent) },
+  { pattern: /^material-settings$/, handler: () => renderMaterialSettings(mainContent) },
   { pattern: /^equipment\/(machines|build-plates|nozzles|ams-units|other-equipment)$/, handler: (m) => renderEquipmentPage(mainContent, m[1]) },
   { pattern: /^consumables$/, handler: () => renderConsumables(mainContent) },
   { pattern: /^settings$/, handler: () => renderSettings(mainContent) },

@@ -41,6 +41,7 @@ export const amsUnitsApi = crudClient("/ams-units");
 export const otherEquipmentApi = crudClient("/other-equipment");
 export const filamentsApi = crudClient("/filaments");
 export const consumablesApi = crudClient("/consumables");
+export const materialSettingsApi = crudClient("/material-settings");
 
 export const settingsApi = {
   get: () => api.get("/settings"),

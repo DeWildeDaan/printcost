@@ -30,6 +30,7 @@ func (a *API) Routes() chi.Router {
 	mountCRUD(r, "/other-equipment", a.otherEquipment())
 	mountCRUD(r, "/filaments", a.filaments())
 	mountCRUD(r, "/consumables", a.consumables())
+	mountCRUD(r, "/material-settings", a.materialSettings())
 
 	r.Route("/quotes", func(r chi.Router) {
 		r.Get("/", a.listQuotes)

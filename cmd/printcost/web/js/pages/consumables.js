@@ -10,6 +10,13 @@ function formHTML(item) {
         <div class="field"><label>Name *</label><input name="name" required placeholder="Glue stick, IPA wipe, ..." value="${escapeHTML(v.name)}"></div>
         <div class="field"><label>Unit label *</label><input name="unit_label" required placeholder="piece, ml, g, sheet" value="${escapeHTML(v.unit_label)}"></div>
         <div class="field"><label>Unit cost *</label><input type="number" step="0.01" required name="unit_cost" value="${v.unit_cost ?? ""}"></div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <div class="checkbox-row">
+            <input type="checkbox" id="default_on_quote" name="default_on_quote" ${v.default_on_quote ? "checked" : ""}>
+            <label for="default_on_quote" style="margin:0;">Add to new quotes by default</label>
+          </div>
+        </div>
         <div class="field span2"><label>Notes</label><textarea name="notes">${escapeHTML(v.notes)}</textarea></div>
       </div>
       <div style="margin-top:16px; display:flex; gap:8px;">
@@ -25,6 +32,7 @@ function collectFormData(form) {
     name: form.elements.name.value,
     unit_label: form.elements.unit_label.value,
     unit_cost: parseFloat(form.elements.unit_cost.value) || 0,
+    default_on_quote: form.elements.default_on_quote.checked,
     notes: form.elements.notes.value,
   };
 }
@@ -45,6 +53,7 @@ export async function renderConsumables(container) {
         <td>${escapeHTML(c.name)}</td>
         <td>${escapeHTML(c.unit_label)}</td>
         <td class="num">${fmtMoney(c.unit_cost)}</td>
+        <td>${c.default_on_quote ? "Yes" : "—"}</td>
         <td class="table-actions">
           <button class="small edit-btn" data-id="${c.id}">Edit</button>
           <button class="small danger delete-btn" data-id="${c.id}">Delete</button>
@@ -65,10 +74,10 @@ export async function renderConsumables(container) {
       <div class="card">
         <table>
           <thead><tr>
-            <th>Name</th><th>Unit</th><th class="num">Unit cost</th><th></th>
+            <th>Name</th><th>Unit</th><th class="num">Unit cost</th><th>Default on quote</th><th></th>
           </tr></thead>
           <tbody>
-            ${items.length ? items.map(rowHTML).join("") : `<tr><td colspan="4" class="empty-state">No consumables yet.</td></tr>`}
+            ${items.length ? items.map(rowHTML).join("") : `<tr><td colspan="5" class="empty-state">No consumables yet.</td></tr>`}
           </tbody>
         </table>
       </div>

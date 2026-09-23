@@ -76,34 +76,59 @@ type OtherEquipment struct {
 	UpdatedAt     string  `json:"updated_at"`
 }
 
+// FilamentColor is one physical spool color of a filament, with an optional
+// link to that color's tuned slicer profile page (colors of the same material
+// often need different profiles, e.g. black ABS vs white ABS).
+type FilamentColor struct {
+	Hex        string `json:"hex"`
+	ProfileURL string `json:"profile_url"`
+}
+
 type Filament struct {
-	ID                 int64    `json:"id"`
-	Name               string   `json:"name"`
-	Brand              string   `json:"brand"`
-	Material           string   `json:"material"`
-	DiameterMm         float64  `json:"diameter_mm"`
-	SpoolPrice         float64  `json:"spool_price"`
-	SpoolWeightKg      float64  `json:"spool_weight_kg"`
-	DensityGcm3        float64  `json:"density_gcm3"`
-	DryingTempC        *int64   `json:"drying_temp_c"`
-	DryingTimeHours    *float64 `json:"drying_time_hours"`
-	RequiresDryCabinet bool     `json:"requires_dry_cabinet"`
-	Notes              string   `json:"notes"`
-	PricePerKg         float64  `json:"price_per_kg"`
-	PricePerG          float64  `json:"price_per_g"`
-	LengthPerRollM     float64  `json:"length_per_roll_m"`
-	CreatedAt          string   `json:"created_at"`
-	UpdatedAt          string   `json:"updated_at"`
+	ID                         int64           `json:"id"`
+	Name                       string          `json:"name"`
+	Brand                      string          `json:"brand"`
+	Material                   string          `json:"material"`
+	DiameterMm                 float64         `json:"diameter_mm"`
+	SpoolPrice                 float64         `json:"spool_price"`
+	SpoolWeightKg              float64         `json:"spool_weight_kg"`
+	DensityGcm3                float64         `json:"density_gcm3"`
+	DryingTempC                *int64          `json:"drying_temp_c"`
+	DryingTimeHours            *float64        `json:"drying_time_hours"`
+	RequiresDryCabinet         bool            `json:"requires_dry_cabinet"`
+	GlueStickRecommended       bool            `json:"glue_stick_recommended"`
+	Notes                      string          `json:"notes"`
+	Colors                     []FilamentColor `json:"colors"`
+	RecommendedBuildPlateIDs   []int64         `json:"recommended_build_plate_ids"`
+	RecommendedBuildPlateNames []string        `json:"recommended_build_plate_names,omitempty"`
+	PricePerKg                 float64         `json:"price_per_kg"`
+	PricePerG                  float64         `json:"price_per_g"`
+	LengthPerRollM             float64         `json:"length_per_roll_m"`
+	CreatedAt                  string          `json:"created_at"`
+	UpdatedAt                  string          `json:"updated_at"`
+}
+
+// MaterialSettings holds print-setting recommendations shared by every
+// filament of a given material (e.g. all ABS, regardless of brand or color).
+type MaterialSettings struct {
+	ID        int64  `json:"id"`
+	Material  string `json:"material"`
+	Supports  string `json:"supports"`
+	FuzzySkin string `json:"fuzzy_skin"`
+	Ironing   string `json:"ironing"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 type Consumable struct {
-	ID        int64   `json:"id"`
-	Name      string  `json:"name"`
-	UnitLabel string  `json:"unit_label"`
-	UnitCost  float64 `json:"unit_cost"`
-	Notes     string  `json:"notes"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt string  `json:"updated_at"`
+	ID             int64   `json:"id"`
+	Name           string  `json:"name"`
+	UnitLabel      string  `json:"unit_label"`
+	UnitCost       float64 `json:"unit_cost"`
+	DefaultOnQuote bool    `json:"default_on_quote"`
+	Notes          string  `json:"notes"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
 }
 
 type ProcessingStep struct {

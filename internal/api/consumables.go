@@ -7,11 +7,13 @@ import (
 	"printcost/internal/models"
 )
 
-const consumableCols = `id, name, unit_label, unit_cost, notes, created_at, updated_at`
+const consumableCols = `id, name, unit_label, unit_cost, default_on_quote, notes, created_at, updated_at`
 
 func scanConsumable(row interface{ Scan(...any) error }) (models.Consumable, error) {
 	var c models.Consumable
-	err := row.Scan(&c.ID, &c.Name, &c.UnitLabel, &c.UnitCost, &c.Notes, &c.CreatedAt, &c.UpdatedAt)
+	var defaultOnQuote int
+	err := row.Scan(&c.ID, &c.Name, &c.UnitLabel, &c.UnitCost, &defaultOnQuote, &c.Notes, &c.CreatedAt, &c.UpdatedAt)
+	c.DefaultOnQuote = defaultOnQuote != 0
 	return c, err
 }
 
@@ -46,8 +48,8 @@ func (a *API) consumables() resource {
 				return
 			}
 			res, err := a.DB.Exec(
-				`INSERT INTO consumables (name, unit_label, unit_cost, notes) VALUES (?, ?, ?, ?)`,
-				c.Name, c.UnitLabel, c.UnitCost, c.Notes,
+				`INSERT INTO consumables (name, unit_label, unit_cost, default_on_quote, notes) VALUES (?, ?, ?, ?, ?)`,
+				c.Name, c.UnitLabel, c.UnitCost, c.DefaultOnQuote, c.Notes,
 			)
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, err.Error())
@@ -86,8 +88,8 @@ func (a *API) consumables() resource {
 				return
 			}
 			_, err = a.DB.Exec(
-				`UPDATE consumables SET name=?, unit_label=?, unit_cost=?, notes=?, updated_at=datetime('now') WHERE id=?`,
-				c.Name, c.UnitLabel, c.UnitCost, c.Notes, id,
+				`UPDATE consumables SET name=?, unit_label=?, unit_cost=?, default_on_quote=?, notes=?, updated_at=datetime('now') WHERE id=?`,
+				c.Name, c.UnitLabel, c.UnitCost, c.DefaultOnQuote, c.Notes, id,
 			)
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, err.Error())
