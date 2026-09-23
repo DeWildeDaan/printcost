@@ -23,14 +23,14 @@ func Open(path string) (*sql.DB, error) {
 	}
 	sqlDB.SetMaxOpenConns(1)
 
-	if err := migrate(sqlDB); err != nil {
-		sqlDB.Close()
-		return nil, fmt.Errorf("migrate schema: %w", err)
-	}
-
 	if _, err := sqlDB.Exec(schemaSQL); err != nil {
 		sqlDB.Close()
 		return nil, fmt.Errorf("apply schema: %w", err)
+	}
+
+	if err := migrate(sqlDB); err != nil {
+		sqlDB.Close()
+		return nil, fmt.Errorf("migrate schema: %w", err)
 	}
 
 	return sqlDB, nil
