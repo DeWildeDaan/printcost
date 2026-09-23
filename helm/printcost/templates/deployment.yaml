@@ -25,8 +25,17 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Release.Name }}-printcost-env
-            - secretRef:
-                name: {{ .Release.Name }}-printcost-secrets
+          env:
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oidc.existingSecret | default (printf "%s-printcost-secrets" .Release.Name) }}
+                  key: {{ if .Values.oidc.existingSecret }}{{ .Values.oidc.existingSecretClientSecretKey }}{{ else }}OIDC_CLIENT_SECRET{{ end }}
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oidc.existingSecret | default (printf "%s-printcost-secrets" .Release.Name) }}
+                  key: {{ if .Values.oidc.existingSecret }}{{ .Values.oidc.existingSecretSessionSecretKey }}{{ else }}SESSION_SECRET{{ end }}
           volumeMounts:
             - name: data
               mountPath: /data

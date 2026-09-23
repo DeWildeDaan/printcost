@@ -25,12 +25,22 @@ env:
 # The whole site is protected by OIDC/SSO login (no local accounts).
 # clientSecret and sessionSecret go in a Secret, not the ConfigMap - set
 # them via --set or a values override file that isn't committed.
+#
+# To inject them from a Secret you already manage instead (e.g. from
+# external-secrets or sealed-secrets), set oidc.existingSecret to its name
+# and, if its keys aren't named OIDC_CLIENT_SECRET/SESSION_SECRET, override
+# existingSecretClientSecretKey/existingSecretSessionSecretKey. clientSecret
+# and sessionSecret below are then ignored and no Secret is created by this
+# chart.
 oidc:
   issuerUrl: ""
   clientId: ""
   clientSecret: ""
   redirectUrl: ""
   sessionSecret: ""
+  existingSecret: ""
+  existingSecretClientSecretKey: OIDC_CLIENT_SECRET
+  existingSecretSessionSecretKey: SESSION_SECRET
 
 resources:
   requests:
