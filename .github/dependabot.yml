@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    groups:
+      # All patch+minor updates in one PR; majors are ungrouped = one PR each.
+      patch-and-minor:
+        update-types: ["minor", "patch"]
+    reviewers: [DeWildeDaan]
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    groups:
+      patch-and-minor:
+        update-types: ["minor", "patch"]
+    reviewers: [DeWildeDaan]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    groups:
+      patch-and-minor:
+        update-types: ["minor", "patch"]
+    reviewers: [DeWildeDaan]
