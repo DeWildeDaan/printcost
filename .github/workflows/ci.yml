@@ -53,7 +53,7 @@ jobs:
 
   helm:
     needs: test
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,7 +67,9 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Package chart
-        run: helm package helm/printcost --destination /tmp/chart
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          helm package helm/printcost --version "$v" --app-version "$v" --destination /tmp/chart
 
       - name: Push chart
         run: |
