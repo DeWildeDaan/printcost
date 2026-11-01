@@ -499,3 +499,39 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
 }
 .suggested-price-label { font-size: 14px; color: var(--text-dim); font-weight: 600; }
 .suggested-price-value { font-size: 32px; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+
+/* --- Mobile polish --- */
+
+@media (max-width: 860px) {
+  html, body { overflow-x: hidden; }
+
+  /* 16px inputs stop iOS Safari zooming on focus; bigger tap targets */
+  input, select, textarea { font-size: 16px; min-height: 40px; }
+  input[type="checkbox"] { min-height: 18px; }
+  button, .btn { min-height: 40px; }
+  button.small { min-height: 34px; }
+  .nav-list li a { padding-top: 11px; padding-bottom: 11px; }
+
+  /* tables wrap text; only tables with 6+ columns scroll sideways */
+  tbody td, thead th { padding: 8px 6px; overflow-wrap: anywhere; }
+  table:has(th:nth-child(6)) { display: block; overflow-x: auto; white-space: nowrap; }
+  table:has(th:nth-child(6)) td, table:has(th:nth-child(6)) th { overflow-wrap: normal; }
+
+  .page-header { flex-wrap: wrap; }
+  .table-actions { flex-wrap: wrap; }
+  .filters-bar select, .filters-bar input { min-width: 0; flex: 1 1 140px; }
+  .card, .section { padding-left: 14px; padding-right: 14px; }
+  .suggested-price-box { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .suggested-price-value { font-size: 26px; }
+
+  .row-item > * { min-width: 0; }
+
+  /* consumable row: select on its own line, then qty / unit / total / remove */
+  .row-list .row-item.consumable-row { grid-template-columns: 1fr 1fr 1fr 32px; }
+  .consumable-row > :first-child { grid-column: 1 / -1; }
+
+  /* filament color row (inline grid style): hex + remove on top, link below */
+  .row-list .row-item[style] { grid-template-columns: 1fr 32px !important; }
+  .row-item[style] > :nth-child(3) { grid-column: 2; grid-row: 1; }
+  .row-item[style] > :nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+}
